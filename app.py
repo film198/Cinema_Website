@@ -4,36 +4,25 @@ import time
 import subprocess
 import random
 import datetime
-
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.service import Service
 
-
-# ==============================
-# 🔐 التوكن من المتغير البيئي
-# ==============================
-
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
-
-if not GITHUB_TOKEN:
-    print("⚠️ لم يتم العثور على التوكن في المتغير البيئي")
-else:
-    print("✅ تم تحميل التوكن بنجاح")
-
-
-# ==============================
-# 📂 المسارات
-# ==============================
+# ===============================
+# الإعدادات
+# ===============================
 
 BASE_PATH = "/home/issam/Desktop/movie/"
 MOVIES_FILE = os.path.join(BASE_PATH, "movies.json")
 LINKS_FILE = os.path.join(BASE_PATH, "links.txt")
 
+# 🔥 استخدم SSH بدل HTTPS
+GIT_REMOTE = "git@github.com:film198/Cinema_Website.git"
 
-# ==============================
-# 🚀 دالة الرفع إلى GitHub
-# ==============================
+
+# ===============================
+# وظيفة الرفع إلى GitHub
+# ===============================
 
 def push():
     try:
@@ -43,32 +32,24 @@ def push():
 
         subprocess.run(
             ["git", "commit", "-m", "update"],
-            check=False
+            capture_output=True
         )
 
-        if GITHUB_TOKEN:
-            subprocess.run(
-                [
-                    "git",
-                    "push",
-                    f"https://{GITHUB_TOKEN}@github.com/film198/Cinema_Website.git",
-                    "main",
-                    "--force"
-                ],
-                check=True
-            )
+        # 🚀 الرفع عبر SSH
+        subprocess.run(
+            ["git", "push", GIT_REMOTE, "main", "--force"],
+            check=True
+        )
 
-            print("✅ تم الرفع للموقع بنجاح!")
-        else:
-            print("❌ لا يوجد توكن — لا يمكن الرفع")
+        print("✅ تم الرفع بنجاح عبر SSH!")
 
     except Exception as e:
-        print("❌ فشل الرفع:", e)
+        print("❌ خطأ في الرفع:", e)
 
 
-# ==============================
-# 🤖 سكرايبر جلب عنوان الفيلم
-# ==============================
+# ===============================
+# استخراج عنوان الفيلم
+# ===============================
 
 def run_scraper(url):
 
@@ -89,10 +70,6 @@ def run_scraper(url):
 
         title = driver.title.split("|")[0].strip()
 
-        # ==============================
-        # 📦 تحميل الأفلام القديمة
-        # ==============================
-
         movies = []
 
         if os.path.exists(MOVIES_FILE):
@@ -101,10 +78,6 @@ def run_scraper(url):
                     movies = json.load(f)
                 except:
                     movies = []
-
-        # ==============================
-        # ➕ إضافة الفيلم الجديد
-        # ==============================
 
         movies.insert(0, {
             "title": title,
@@ -116,16 +89,12 @@ def run_scraper(url):
         with open(MOVIES_FILE, "w", encoding="utf-8") as f:
             json.dump(movies, f, indent=4, ensure_ascii=False)
 
-        # ==============================
-        # 🚀 رفع التغييرات
-        # ==============================
-
         push()
 
         return True
 
     except Exception as e:
-        print("❌ خطأ في السكرايبر:", e)
+        print("❌ خطأ:", e)
         return False
 
     finally:
@@ -133,13 +102,13 @@ def run_scraper(url):
             driver.quit()
 
 
-# ==============================
-# 🔄 التشغيل المستمر
-# ==============================
+# ===============================
+# التشغيل المستمر
+# ===============================
 
 if __name__ == "__main__":
 
-    print("🎬 البوت يعمل الآن... سيتم الرفع كل ساعة إلى ساعة ونصف")
+    print("🎬 البوت يعمل الآن...")
 
     while True:
 
@@ -148,19 +117,17 @@ if __name__ == "__main__":
             with open(LINKS_FILE, "r") as f:
                 links = f.readlines()
 
-            if len(links) > 0:
+            if run_scraper(links[0].strip()):
 
-                if run_scraper(links[0].strip()):
+                # حذف الرابط الذي تم معالجته
+                with open(LINKS_FILE, "w") as f:
+                    f.writelines(links[1:])
 
-                    # حذف أول رابط بعد معالجته
-                    with open(LINKS_FILE, "w") as f:
-                        f.writelines(links[1:])
+                wait = random.randint(3600, 5400)
 
-                    wait = random.randint(3600, 5400)
+                print(f"💤 الانتظار القادم: {wait // 60} دقيقة")
 
-                    print(f"💤 الانتظار القادم: {wait // 60} دقيقة")
-
-                    time.sleep(wait)
+                time.sleep(wait)
 
         else:
             time.sleep(600)
