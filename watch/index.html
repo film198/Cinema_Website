@@ -1,0 +1,12 @@
+<script>
+const id = window.location.pathname.split("/").pop();
+
+document.write(`
+<h1>"/watch/" + movie.tmdb_id</h1>
+<iframe 
+src="https://www.2embed.cc/embed/${id}"
+width="100%"
+height="600">
+</iframe>
+`);
+</script>
