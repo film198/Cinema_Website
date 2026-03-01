@@ -60,18 +60,19 @@ def run_scraper(url):
         return False
 
     try:
-        # استخراج اسم الفيلم من الرابط
         movie_name = url.split("/")[-1].replace("-", " ")
 
         print("🎬 البحث عن:", movie_name)
 
-        search_url = f"https://api.themoviedb.org/3/search/movie"
-        params = {
-            "api_key": TMDB_API_KEY,
-            "query": movie_name
-        }
+        response = requests.get(
+            "https://api.themoviedb.org/3/search/movie",
+            params={
+                "api_key": TMDB_API_KEY,
+                "query": movie_name
+            },
+            timeout=10
+        )
 
-        response = requests.get(search_url, params=params)
         data = response.json()
 
         thumb_path = "images/default.jpg"
@@ -88,14 +89,26 @@ def run_scraper(url):
                 img_name = f"{int(time.time())}.jpg"
                 img_path = os.path.join(IMAGES_FOLDER, img_name)
 
-                img_data = requests.get(image_url).content
+                img_response = requests.get(image_url, timeout=10)
 
-                with open(img_path, "wb") as f:
-                    f.write(img_data)
+                content_type = img_response.headers.get("Content-Type", "")
 
-                if os.path.getsize(img_path) > 1000:
+                # 🔥 التحقق أن الرابط صورة فعلية
+                if (
+                    img_response.status_code == 200
+                    and "image" in content_type
+                    and len(img_response.content) > 2000
+                ):
+
+                    with open(img_path, "wb") as f:
+                        f.write(img_response.content)
+
                     thumb_path = f"images/{img_name}"
-                    print("🖼 تم تحميل البوستر من TMDB")
+
+                    print("🖼 تم تحميل صورة صحيحة من TMDB")
+
+                else:
+                    print("⚠️ الصورة غير صالحة أو تالفة")
 
         # ==============================
         # تحديث قاعدة البيانات
@@ -135,7 +148,7 @@ def run_scraper(url):
 
 if __name__ == "__main__":
 
-    print("🎬 البوت يعمل الآن — نظام TMDB مفعّل")
+    print("🎬 البوت يعمل الآن — نظام TMDB مصحح")
 
     while True:
 
