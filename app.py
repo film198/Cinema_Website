@@ -19,7 +19,6 @@ TMDB_API_KEY = os.getenv("TMDB_API_KEY")
 
 os.makedirs(IMAGES_FOLDER, exist_ok=True)
 
-
 # ==================================================
 # رفع الملفات عبر SSH
 # ==================================================
@@ -43,7 +42,7 @@ def push():
 
 
 # ==================================================
-# تحميل صورة الفيلم
+# تحميل صورة
 # ==================================================
 
 def download_image(poster_path):
@@ -51,10 +50,10 @@ def download_image(poster_path):
     if not poster_path:
         return "images/default.jpg"
 
-    image_url = f"https://image.tmdb.org/t/p/w500{poster_path}"
+    url = f"https://image.tmdb.org/t/p/w500{poster_path}"
 
     try:
-        img = requests.get(image_url, timeout=10)
+        img = requests.get(url, timeout=10)
 
         if (
             img.status_code == 200
@@ -79,17 +78,15 @@ def download_image(poster_path):
 
 
 # ==================================================
-# جلب الأفلام من TMDB تلقائياً
+# جلب الأفلام من قسم معين
 # ==================================================
 
-def fetch_movies():
+def fetch_category(category_name, endpoint):
 
-    print("🔎 جلب أفلام جديدة من TMDB...")
-
-    url = "https://api.themoviedb.org/3/movie/now_playing"
+    print(f"🔎 جلب قسم: {category_name}")
 
     response = requests.get(
-        url,
+        endpoint,
         params={
             "api_key": TMDB_API_KEY,
             "language": "en-US",
@@ -100,18 +97,18 @@ def fetch_movies():
 
     data = response.json()
 
-    new_movies = []
+    movies = []
 
-    if not os.path.exists(MOVIES_FILE):
-        movies_db = []
-    else:
+    if os.path.exists(MOVIES_FILE):
         with open(MOVIES_FILE, "r", encoding="utf-8") as f:
             try:
-                movies_db = json.load(f)
+                movies = json.load(f)
             except:
-                movies_db = []
+                movies = []
 
-    existing_titles = {movie["title"] for movie in movies_db}
+    existing_titles = {m["title"] for m in movies}
+
+    new_movies = []
 
     if data.get("results"):
 
@@ -122,31 +119,49 @@ def fetch_movies():
             if title in existing_titles:
                 continue
 
-            poster_path = movie.get("poster_path")
-            thumb = download_image(poster_path)
+            poster = movie.get("poster_path")
+            thumb = download_image(poster)
 
             new_movies.append({
                 "title": title,
                 "url": "#",
                 "thumb_path": thumb,
+                "category": category_name,
                 "date": datetime.datetime.now().strftime("%d %b %Y")
             })
 
     if new_movies:
-        movies_db = new_movies + movies_db
+        movies = new_movies + movies
 
         with open(MOVIES_FILE, "w", encoding="utf-8") as f:
-            json.dump(movies_db, f, indent=4, ensure_ascii=False)
+            json.dump(movies, f, indent=4, ensure_ascii=False)
 
-        print(f"🔥 تمت إضافة {len(new_movies)} فيلم جديد")
+        print(f"🔥 تمت إضافة {len(new_movies)} فيلم في قسم {category_name}")
 
         push()
     else:
-        print("⚡ لا توجد أفلام جديدة")
+        print(f"⚡ لا توجد أفلام جديدة في {category_name}")
 
 
 # ==================================================
-# التشغيل التلقائي
+# التشغيل الرئيسي
+# ==================================================
+
+def fetch_all_categories():
+
+    categories = {
+        "Popular": "https://api.themoviedb.org/3/movie/popular",
+        "Now Playing": "https://api.themoviedb.org/3/movie/now_playing",
+        "Top Rated": "https://api.themoviedb.org/3/movie/top_rated",
+        "Upcoming": "https://api.themoviedb.org/3/movie/upcoming",
+    }
+
+    for name, endpoint in categories.items():
+        fetch_category(name, endpoint)
+
+
+# ==================================================
+# تشغيل تلقائي
 # ==================================================
 
 if __name__ == "__main__":
@@ -155,14 +170,12 @@ if __name__ == "__main__":
         print("❌ يجب تعيين TMDB_API_KEY")
         exit()
 
-    print("🎬 النظام التلقائي يعمل الآن...")
+    print("🎬 نظام الأقسام التلقائي يعمل الآن")
 
     while True:
 
-        fetch_movies()
-
-        wait = 3600  # ساعة
+        fetch_all_categories()
 
         print("⏳ انتظار ساعة قبل التحديث القادم")
 
-        time.sleep(wait)
+        time.sleep(3600)
