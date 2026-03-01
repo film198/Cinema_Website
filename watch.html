@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cinema 198</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+<h1>🎬 Cinema 198</h1>
+
+<input type="text" id="searchInput" placeholder="Search movie..." onkeyup="searchMovies()">
+
+<div class="categories">
+<button onclick="filterCategory('all')">🔥 All</button>
+<button onclick="filterCategory('Popular')">🔥 Popular</button>
+<button onclick="filterCategory('Top Rated')">⭐ Top Rated</button>
+<button onclick="filterCategory('Upcoming')">🚀 Upcoming</button>
+</div>
+
+</header>
+
+<div id="movies" class="grid"></div>
+
+<script>
+
+let movies = [];
+let filteredMovies = [];
+
+async function loadMovies(){
+const res = await fetch("movies.json?v=" + Date.now());
+movies = await res.json();
+filteredMovies = movies;
+displayMovies(filteredMovies);
+}
+
+function displayMovies(data){
+
+document.getElementById("movies").innerHTML = data.map(movie => `
+<div class="card">
+<img src="${movie.thumb_path}" onerror="this.src='images/default.jpg'">
+<h3>${movie.title}</h3>
+<button onclick="watch('${movie.watch_url}')">▶ Watch</button>
+</div>
+`).join("");
+}
+
+function watch(url){
+window.location.href = url;
+}
+
+function searchMovies(){
+let value = document.getElementById("searchInput").value.toLowerCase();
+
+filteredMovies = movies.filter(m =>
+m.title.toLowerCase().includes(value)
+);
+
+displayMovies(filteredMovies);
+}
+
+function filterCategory(cat){
+
+if(cat === "all"){
+filteredMovies = movies;
+}
+else{
+filteredMovies = movies.filter(m =>
+m.category && m.category === cat
+);
+}
+
+displayMovies(filteredMovies);
+}
+
+loadMovies();
+
+</script>
+
+</body>
+</html>

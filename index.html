@@ -209,5 +209,40 @@ loadMovies();
 
 </script>
 
+<!-- ================= NEWSLETTER ================= -->
+<div style="text-align:center;padding:40px;background:#111;">
+<h2>📩 Subscribe for Latest Movies</h2>
+
+<input type="email" id="emailInput"
+placeholder="Enter your email"
+style="padding:10px;width:250px;border-radius:20px;border:none;">
+
+<button onclick="subscribe()"
+style="padding:10px 20px;border:none;background:#e50914;color:white;border-radius:20px;cursor:pointer;">
+Subscribe
+</button>
+
+<p id="msg"></p>
+</div>
+
+<script>
+
+async function subscribe(){
+
+let email = document.getElementById("emailInput").value;
+
+let res = await fetch("api.php",{
+method:"POST",
+headers:{ "Content-Type":"application/json" },
+body: JSON.stringify({ email: email })
+});
+
+let data = await res.json();
+document.getElementById("msg").innerText = data.message;
+}
+
+</script>
+
+
 </body>
 </html>
