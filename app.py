@@ -4,10 +4,7 @@ import time
 import subprocess
 import random
 import datetime
-
-from selenium import webdriver
-from selenium.webdriver.firefox.options import Options
-from selenium.webdriver.firefox.service import Service
+import requests
 
 
 # ==============================
@@ -20,6 +17,8 @@ LINKS_FILE = os.path.join(BASE_PATH, "links.txt")
 IMAGES_FOLDER = os.path.join(BASE_PATH, "images")
 
 GIT_REMOTE = "git@github.com:film198/Cinema_Website.git"
+
+TMDB_API_KEY = os.getenv("TMDB_API_KEY")
 
 os.makedirs(IMAGES_FOLDER, exist_ok=True)
 
@@ -51,69 +50,52 @@ def push():
 
 
 # ==============================
-# استخراج الفيلم + أفضل صورة
+# جلب الفيلم + الصورة من TMDB
 # ==============================
 
 def run_scraper(url):
 
-    opts = Options()
-    opts.add_argument("--headless")
-    opts.binary_location = "/home/issam/Desktop/movie/waterfox/waterfox"
-
-    driver = None
+    if not TMDB_API_KEY:
+        print("❌ لم يتم تعيين TMDB_API_KEY")
+        return False
 
     try:
-        driver = webdriver.Firefox(
-            service=Service("/home/issam/Desktop/movie/geckodriver"),
-            options=opts
-        )
+        # استخراج اسم الفيلم من الرابط
+        movie_name = url.split("/")[-1].replace("-", " ")
 
-        driver.get(url)
-        time.sleep(7)
+        print("🎬 البحث عن:", movie_name)
 
-        title = driver.title.split("|")[0].strip()
+        search_url = f"https://api.themoviedb.org/3/search/movie"
+        params = {
+            "api_key": TMDB_API_KEY,
+            "query": movie_name
+        }
 
-        # ==============================
-        # 🔥 استخراج أفضل صورة من الصفحة
-        # ==============================
+        response = requests.get(search_url, params=params)
+        data = response.json()
 
         thumb_path = "images/default.jpg"
-        image_url = None
 
-        try:
-            images = driver.find_elements("tag name", "img")
+        if data.get("results"):
 
-            best_score = 0
+            movie = data["results"][0]
+            poster_path = movie.get("poster_path")
 
-            for img in images:
-                src = img.get_attribute("src")
+            if poster_path:
 
-                if src and src.startswith("http"):
+                image_url = f"https://image.tmdb.org/t/p/w500{poster_path}"
 
-                    score = len(src)
+                img_name = f"{int(time.time())}.jpg"
+                img_path = os.path.join(IMAGES_FOLDER, img_name)
 
-                    if score > best_score:
-                        best_score = score
-                        image_url = src
+                img_data = requests.get(image_url).content
 
-        except:
-            pass
+                with open(img_path, "wb") as f:
+                    f.write(img_data)
 
-        if image_url:
-
-            img_name = f"{int(time.time())}.jpg"
-            img_path = os.path.join(IMAGES_FOLDER, img_name)
-
-            os.system(f"wget -q -O '{img_path}' '{image_url}'")
-
-            if os.path.exists(img_path) and os.path.getsize(img_path) > 1000:
-                thumb_path = f"images/{img_name}"
-                print("🖼 تم تحميل الصورة:", img_name)
-            else:
-                print("⚠️ الصورة لم تُحمل بشكل صحيح")
-
-        else:
-            print("⚠️ لم يتم العثور على صورة مناسبة")
+                if os.path.getsize(img_path) > 1000:
+                    thumb_path = f"images/{img_name}"
+                    print("🖼 تم تحميل البوستر من TMDB")
 
         # ==============================
         # تحديث قاعدة البيانات
@@ -129,7 +111,7 @@ def run_scraper(url):
                     movies = []
 
         movies.insert(0, {
-            "title": title,
+            "title": movie_name.title(),
             "url": url,
             "thumb_path": thumb_path,
             "date": datetime.datetime.now().strftime("%d %b %Y")
@@ -143,12 +125,8 @@ def run_scraper(url):
         return True
 
     except Exception as e:
-        print("❌ خطأ أثناء جلب الفيلم:", e)
+        print("❌ خطأ أثناء معالجة الفيلم:", e)
         return False
-
-    finally:
-        if driver:
-            driver.quit()
 
 
 # ==============================
@@ -157,7 +135,7 @@ def run_scraper(url):
 
 if __name__ == "__main__":
 
-    print("🎬 البوت يعمل الآن — نظام كامل مفعّل")
+    print("🎬 البوت يعمل الآن — نظام TMDB مفعّل")
 
     while True:
 
@@ -168,7 +146,7 @@ if __name__ == "__main__":
 
             if run_scraper(links[0].strip()):
 
-                # حذف الرابط الذي تم معالجته
+                # حذف الرابط الذي تمت معالجته
                 with open(LINKS_FILE, "w") as f:
                     f.writelines(links[1:])
 
