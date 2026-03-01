@@ -5,11 +5,11 @@ import subprocess
 import random
 import datetime
 import requests
+from bs4 import BeautifulSoup
 
-
-# ==============================
+# ==================================================
 # الإعدادات
-# ==============================
+# ==================================================
 
 BASE_PATH = "/home/issam/Desktop/movie/"
 MOVIES_FILE = os.path.join(BASE_PATH, "movies.json")
@@ -23,20 +23,16 @@ TMDB_API_KEY = os.getenv("TMDB_API_KEY")
 os.makedirs(IMAGES_FOLDER, exist_ok=True)
 
 
-# ==============================
+# ==================================================
 # رفع الملفات عبر SSH
-# ==============================
+# ==================================================
 
 def push():
     try:
         os.chdir(BASE_PATH)
 
         subprocess.run(["git", "add", "."], check=True)
-
-        subprocess.run(
-            ["git", "commit", "-m", "update"],
-            capture_output=True
-        )
+        subprocess.run(["git", "commit", "-m", "update"], capture_output=True)
 
         subprocess.run(
             ["git", "push", GIT_REMOTE, "main", "--force"],
@@ -49,31 +45,93 @@ def push():
         print("❌ خطأ أثناء الرفع:", e)
 
 
-# ==============================
-# جلب الفيلم + الصورة من TMDB
-# ==============================
+# ==================================================
+# تحميل صورة من TMDB مع التحقق
+# ==================================================
+
+def download_image(poster_path):
+
+    if not poster_path:
+        return "images/default.jpg"
+
+    image_url = f"https://image.tmdb.org/t/p/w500{poster_path}"
+
+    try:
+        img_data = requests.get(image_url, timeout=10)
+
+        if (
+            img_data.status_code == 200
+            and "image" in img_data.headers.get("Content-Type", "")
+            and len(img_data.content) > 2000
+        ):
+
+            img_name = f"{int(time.time())}.jpg"
+            img_path = os.path.join(IMAGES_FOLDER, img_name)
+
+            with open(img_path, "wb") as f:
+                f.write(img_data.content)
+
+            print("🖼 تم تحميل صورة صحيحة")
+
+            return f"images/{img_name}"
+
+        else:
+            print("⚠️ الصورة غير صالحة")
+
+            return "images/default.jpg"
+
+    except:
+        return "images/default.jpg"
+
+
+# ==================================================
+# معالجة فيلم واحد
+# ==================================================
 
 def run_scraper(url):
 
     if not TMDB_API_KEY:
-        print("❌ لم يتم تعيين TMDB_API_KEY")
+        print("❌ TMDB_API_KEY غير موجود")
         return False
 
     try:
-        movie_name = url.split("/")[-1].replace("-", " ")
+        print("🎬 معالجة الفيلم:", url)
 
-        print("🎬 البحث عن:", movie_name)
+        # ==================================================
+        # استخراج عنوان الفيلم من الصفحة
+        # ==================================================
 
-        response = requests.get(
+        page = requests.get(url, timeout=10)
+
+        if page.status_code != 200:
+            print("❌ لا يمكن فتح الرابط")
+            return False
+
+        soup = BeautifulSoup(page.text, "html.parser")
+
+        title_tag = soup.find("title")
+
+        if title_tag:
+            movie_title = title_tag.text.split("|")[0].strip()
+        else:
+            movie_title = url.split("/")[-1].replace("-", " ")
+
+        print("🎥 العنوان المكتشف:", movie_title)
+
+        # ==================================================
+        # البحث في TMDB
+        # ==================================================
+
+        search = requests.get(
             "https://api.themoviedb.org/3/search/movie",
             params={
                 "api_key": TMDB_API_KEY,
-                "query": movie_name
+                "query": movie_title
             },
             timeout=10
         )
 
-        data = response.json()
+        data = search.json()
 
         thumb_path = "images/default.jpg"
 
@@ -82,37 +140,11 @@ def run_scraper(url):
             movie = data["results"][0]
             poster_path = movie.get("poster_path")
 
-            if poster_path:
+            thumb_path = download_image(poster_path)
 
-                image_url = f"https://image.tmdb.org/t/p/w500{poster_path}"
-
-                img_name = f"{int(time.time())}.jpg"
-                img_path = os.path.join(IMAGES_FOLDER, img_name)
-
-                img_response = requests.get(image_url, timeout=10)
-
-                content_type = img_response.headers.get("Content-Type", "")
-
-                # 🔥 التحقق أن الرابط صورة فعلية
-                if (
-                    img_response.status_code == 200
-                    and "image" in content_type
-                    and len(img_response.content) > 2000
-                ):
-
-                    with open(img_path, "wb") as f:
-                        f.write(img_response.content)
-
-                    thumb_path = f"images/{img_name}"
-
-                    print("🖼 تم تحميل صورة صحيحة من TMDB")
-
-                else:
-                    print("⚠️ الصورة غير صالحة أو تالفة")
-
-        # ==============================
+        # ==================================================
         # تحديث قاعدة البيانات
-        # ==============================
+        # ==================================================
 
         movies = []
 
@@ -124,7 +156,7 @@ def run_scraper(url):
                     movies = []
 
         movies.insert(0, {
-            "title": movie_name.title(),
+            "title": movie_title,
             "url": url,
             "thumb_path": thumb_path,
             "date": datetime.datetime.now().strftime("%d %b %Y")
@@ -138,17 +170,17 @@ def run_scraper(url):
         return True
 
     except Exception as e:
-        print("❌ خطأ أثناء معالجة الفيلم:", e)
+        print("❌ خطأ:", e)
         return False
 
 
-# ==============================
+# ==================================================
 # التشغيل المستمر
-# ==============================
+# ==================================================
 
 if __name__ == "__main__":
 
-    print("🎬 البوت يعمل الآن — نظام TMDB مصحح")
+    print("🎬 البوت يعمل الآن — النسخة النهائية")
 
     while True:
 
