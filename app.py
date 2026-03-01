@@ -4,29 +4,29 @@ import time
 import subprocess
 import random
 import datetime
+
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.service import Service
 
 
-# ===============================
+# ==============================
 # الإعدادات
-# ===============================
+# ==============================
 
 BASE_PATH = "/home/issam/Desktop/movie/"
 MOVIES_FILE = os.path.join(BASE_PATH, "movies.json")
 LINKS_FILE = os.path.join(BASE_PATH, "links.txt")
 IMAGES_FOLDER = os.path.join(BASE_PATH, "images")
 
-# 🔥 استخدم SSH فقط
 GIT_REMOTE = "git@github.com:film198/Cinema_Website.git"
 
 os.makedirs(IMAGES_FOLDER, exist_ok=True)
 
 
-# ===============================
-# رفع الملفات إلى GitHub عبر SSH
-# ===============================
+# ==============================
+# رفع الملفات عبر SSH
+# ==============================
 
 def push():
     try:
@@ -50,9 +50,9 @@ def push():
         print("❌ خطأ أثناء الرفع:", e)
 
 
-# ===============================
+# ==============================
 # استخراج الفيلم + أفضل صورة
-# ===============================
+# ==============================
 
 def run_scraper(url):
 
@@ -73,50 +73,51 @@ def run_scraper(url):
 
         title = driver.title.split("|")[0].strip()
 
-        # ===============================
-        # 🔥 استخراج أفضل صورة
-        # ===============================
+        # ==============================
+        # 🔥 استخراج أفضل صورة من الصفحة
+        # ==============================
 
         thumb_path = "images/default.jpg"
+        image_url = None
 
         try:
             images = driver.find_elements("tag name", "img")
 
-            best_image = None
-            max_score = 0
+            best_score = 0
 
             for img in images:
                 src = img.get_attribute("src")
 
                 if src and src.startswith("http"):
 
-                    # نعطي أفضلية للرابط الطويل (غالباً بوستر)
                     score = len(src)
 
-                    if score > max_score:
-                        max_score = score
-                        best_image = src
+                    if score > best_score:
+                        best_score = score
+                        image_url = src
 
-            if best_image:
+        except:
+            pass
 
-                img_name = f"{int(time.time())}.jpg"
-                img_path = os.path.join(IMAGES_FOLDER, img_name)
+        if image_url:
 
-                os.system(f"wget -q -O {img_path} {best_image}")
+            img_name = f"{int(time.time())}.jpg"
+            img_path = os.path.join(IMAGES_FOLDER, img_name)
 
+            os.system(f"wget -q -O '{img_path}' '{image_url}'")
+
+            if os.path.exists(img_path) and os.path.getsize(img_path) > 1000:
                 thumb_path = f"images/{img_name}"
-
                 print("🖼 تم تحميل الصورة:", img_name)
-
             else:
-                print("⚠️ لم يتم العثور على صورة مناسبة")
+                print("⚠️ الصورة لم تُحمل بشكل صحيح")
 
-        except Exception as e:
-            print("⚠️ مشكلة في استخراج الصورة:", e)
+        else:
+            print("⚠️ لم يتم العثور على صورة مناسبة")
 
-        # ===============================
+        # ==============================
         # تحديث قاعدة البيانات
-        # ===============================
+        # ==============================
 
         movies = []
 
@@ -150,13 +151,13 @@ def run_scraper(url):
             driver.quit()
 
 
-# ===============================
+# ==============================
 # التشغيل المستمر
-# ===============================
+# ==============================
 
 if __name__ == "__main__":
 
-    print("🎬 البوت يعمل الآن — نظام احترافي مفعل")
+    print("🎬 البوت يعمل الآن — نظام كامل مفعّل")
 
     while True:
 
@@ -167,7 +168,7 @@ if __name__ == "__main__":
 
             if run_scraper(links[0].strip()):
 
-                # حذف الرابط الذي تمت معالجته
+                # حذف الرابط الذي تم معالجته
                 with open(LINKS_FILE, "w") as f:
                     f.writelines(links[1:])
 
