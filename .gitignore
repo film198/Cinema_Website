@@ -1,4 +1,38 @@
-waterfox/
-venv/
-geckodriver
+# Python
+__pycache__/
+*.pyc
 *.log
+
+# Virtual env
+venv/
+.env
+
+# Selenium drivers
+geckodriver
+chromedriver
+
+# Browsers
+waterfox/
+firefox/
+chrome/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Temp
+tmp/
+.cache/
+
+# Secrets
+secrets.json
+token.txt
+
+# Large files
+*.mp4
+*.mkv
+*.zip
