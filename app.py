@@ -8,21 +8,30 @@ from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.service import Service
 
-# ===============================
+
+# ==============================
 # الإعدادات
-# ===============================
+# ==============================
 
 BASE_PATH = "/home/issam/Desktop/movie/"
 MOVIES_FILE = os.path.join(BASE_PATH, "movies.json")
 LINKS_FILE = os.path.join(BASE_PATH, "links.txt")
+IMAGES_FOLDER = os.path.join(BASE_PATH, "images")
 
-# 🔥 استخدم SSH بدل HTTPS
+# 🔥 استخدم SSH فقط
 GIT_REMOTE = "git@github.com:film198/Cinema_Website.git"
 
 
-# ===============================
-# وظيفة الرفع إلى GitHub
-# ===============================
+# ==============================
+# إنشاء مجلد الصور لو غير موجود
+# ==============================
+
+os.makedirs(IMAGES_FOLDER, exist_ok=True)
+
+
+# ==============================
+# رفع الملفات إلى GitHub
+# ==============================
 
 def push():
     try:
@@ -35,21 +44,20 @@ def push():
             capture_output=True
         )
 
-        # 🚀 الرفع عبر SSH
         subprocess.run(
             ["git", "push", GIT_REMOTE, "main", "--force"],
             check=True
         )
 
-        print("✅ تم الرفع بنجاح عبر SSH!")
+        print("✅ تم الرفع بنجاح عبر SSH")
 
     except Exception as e:
         print("❌ خطأ في الرفع:", e)
 
 
-# ===============================
-# استخراج عنوان الفيلم
-# ===============================
+# ==============================
+# تحميل البيانات + الصورة
+# ==============================
 
 def run_scraper(url):
 
@@ -70,6 +78,31 @@ def run_scraper(url):
 
         title = driver.title.split("|")[0].strip()
 
+        # ==========================
+        # تحميل أول صورة من الصفحة
+        # ==========================
+
+        try:
+            img_element = driver.find_element("tag name", "img")
+            img_url = img_element.get_attribute("src")
+
+            img_name = f"{int(time.time())}.jpg"
+            img_path = os.path.join(IMAGES_FOLDER, img_name)
+
+            os.system(f"wget -q -O {img_path} {img_url}")
+
+            thumb_path = f"images/{img_name}"
+
+            print("🖼 تم تحميل الصورة:", img_name)
+
+        except:
+            thumb_path = "images/default.jpg"
+            print("⚠️ لم يتم العثور على صورة — استخدام الصورة الافتراضية")
+
+        # ==========================
+        # تحديث movies.json
+        # ==========================
+
         movies = []
 
         if os.path.exists(MOVIES_FILE):
@@ -82,7 +115,7 @@ def run_scraper(url):
         movies.insert(0, {
             "title": title,
             "url": url,
-            "thumb_path": "images/default.jpg",
+            "thumb_path": thumb_path,
             "date": datetime.datetime.now().strftime("%d %b %Y")
         })
 
@@ -94,7 +127,7 @@ def run_scraper(url):
         return True
 
     except Exception as e:
-        print("❌ خطأ:", e)
+        print("❌ خطأ أثناء جلب الفيلم:", e)
         return False
 
     finally:
@@ -102,13 +135,13 @@ def run_scraper(url):
             driver.quit()
 
 
-# ===============================
+# ==============================
 # التشغيل المستمر
-# ===============================
+# ==============================
 
 if __name__ == "__main__":
 
-    print("🎬 البوت يعمل الآن...")
+    print("🎬 البوت يعمل الآن — رفع تلقائي مفعل")
 
     while True:
 
@@ -125,7 +158,7 @@ if __name__ == "__main__":
 
                 wait = random.randint(3600, 5400)
 
-                print(f"💤 الانتظار القادم: {wait // 60} دقيقة")
+                print(f"⏳ الانتظار القادم: {wait // 60} دقيقة")
 
                 time.sleep(wait)
 
