@@ -1,0 +1,4 @@
+waterfox/
+venv/
+geckodriver
+*.log
