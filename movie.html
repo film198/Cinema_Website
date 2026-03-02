@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Movie Details</title>
+
+<style>
+
+body{
+background:#0d0d0d;
+color:white;
+font-family:Arial;
+margin:0;
+padding:40px;
+}
+
+.container{
+display:flex;
+gap:40px;
+}
+
+img{
+width:350px;
+border-radius:15px;
+box-shadow:0 0 20px red;
+}
+
+button{
+padding:10px 20px;
+border:none;
+background:red;
+color:white;
+border-radius:6px;
+cursor:pointer;
+margin-right:10px;
+}
+
+h1{
+font-size:40px;
+}
+
+</style>
+</head>
+<body>
+
+<div class="container">
+<img id="poster">
+<div>
+<h1 id="title"></h1>
+<p id="category"></p>
+
+<button onclick="watchMovie()">▶ Watch</button>
+<button onclick="addFavorite()">❤️ Add Favorite</button>
+
+<p id="views"></p>
+
+</div>
+</div>
+
+<script>
+
+const params = new URLSearchParams(window.location.search);
+const id = params.get("id");
+
+fetch("movies.json")
+.then(res=>res.json())
+.then(data=>{
+
+let movie = data.find(m=>m.tmdb_id == id);
+
+if(movie){
+document.getElementById("poster").src = movie.thumb_path;
+document.getElementById("title").innerText = movie.title;
+document.getElementById("category").innerText = movie.category;
+
+let views = localStorage.getItem("views_"+id) || 0;
+views++;
+localStorage.setItem("views_"+id, views);
+
+document.getElementById("views").innerText = "Views: "+views;
+}
+
+});
+
+function watchMovie(){
+alert("Video Player Will Open Soon 🚀");
+}
+
+function addFavorite(){
+let fav = JSON.parse(localStorage.getItem("favorites")) || [];
+fav.push(id);
+localStorage.setItem("favorites", JSON.stringify(fav));
+alert("Added To Favorites ❤️");
+}
+
+</script>
+
+</body>
+</html>
