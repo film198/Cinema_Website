@@ -1,0 +1,82 @@
+[
+    {
+        "title": "Dog 51",
+        "tmdb_id": 1266798,
+        "thumb_path": "images/1266798.jpg",
+        "watch_url": "watch.html?id=1266798",
+        "category": "Upcoming",
+        "date": "02 Mar 2026"
+    },
+    {
+        "title": "Your Heart Will Be Broken",
+        "tmdb_id": 1523145,
+        "thumb_path": "images/1523145.jpg",
+        "watch_url": "watch.html?id=1523145",
+        "category": "Upcoming",
+        "date": "02 Mar 2026"
+    },
+    {
+        "title": "Turbulence",
+        "tmdb_id": 1401778,
+        "thumb_path": "images/1401778.jpg",
+        "watch_url": "watch.html?id=1401778",
+        "category": "Upcoming",
+        "date": "02 Mar 2026"
+    },
+    {
+        "title": "Scream 7",
+        "tmdb_id": 1159559,
+        "thumb_path": "images/1159559.jpg",
+        "watch_url": "watch.html?id=1159559",
+        "category": "Upcoming",
+        "date": "02 Mar 2026"
+    },
+    {
+        "title": "Return to Silent Hill",
+        "tmdb_id": 680493,
+        "thumb_path": "images/680493.jpg",
+        "watch_url": "watch.html?id=680493",
+        "category": "Upcoming",
+        "date": "02 Mar 2026"
+    },
+    {
+        "title": "Hellfire",
+        "tmdb_id": 1088434,
+        "thumb_path": "images/1088434.jpg",
+        "watch_url": "watch.html?id=1088434",
+        "category": "Top Rated",
+        "date": "02 Mar 2026"
+    },
+    {
+        "title": "Pose",
+        "tmdb_id": 1199193,
+        "thumb_path": "images/1199193.jpg",
+        "watch_url": "watch.html?id=1199193",
+        "category": "Top Rated",
+        "date": "02 Mar 2026"
+    },
+    {
+        "title": "Mercy",
+        "tmdb_id": 1236153,
+        "thumb_path": "images/1236153.jpg",
+        "watch_url": "watch.html?id=1236153",
+        "category": "Top Rated",
+        "date": "02 Mar 2026"
+    },
+    {
+        "title": "The Bluff",
+        "tmdb_id": 799882,
+        "thumb_path": "images/799882.jpg",
+        "watch_url": "watch.html?id=799882",
+        "category": "Upcoming",
+        "date": "02 Mar 2026"
+    },
+    {
+        "title": "Shelter",
+        "tmdb_id": 1290821,
+        "thumb_path": "images/1290821.jpg",
+        "watch_url": "watch.html?id=1290821",
+        "category": "Popular",
+        "date": "02 Mar 2026"
+    }
+]
