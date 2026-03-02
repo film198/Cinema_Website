@@ -1,7 +1,6 @@
 import os
 import json
 import time
-import random
 import datetime
 import requests
 import subprocess
@@ -12,7 +11,7 @@ import subprocess
 
 BASE_PATH = "/home/issam/Desktop/movie"
 MOVIES_FILE = os.path.join(BASE_PATH, "movies.json")
-GITHUB_REPO = "git@github.com:film198/Cinema_Website.git"
+IMAGES_PATH = os.path.join(BASE_PATH, "images")
 
 TMDB_API_KEY = "c5177fea41bb46c2fb80e81d55473182"
 
@@ -21,24 +20,55 @@ TMDB_API_KEY = "c5177fea41bb46c2fb80e81d55473182"
 # ==============================
 
 def fetch_movies():
-    print("🔎 جلب أفلام جديدة من TMDB...")
+    print("🔎 جلب أفلام من TMDB...")
 
     url = f"https://api.themoviedb.org/3/movie/popular?api_key={TMDB_API_KEY}&language=en-US&page=1"
 
     try:
         res = requests.get(url)
         if res.status_code != 200:
-            print("❌ خطأ في الاتصال بـ TMDB")
+            print("❌ خطأ في TMDB")
             return []
 
-        return res.json().get("results", [])[:20]
+        return res.json().get("results", [])[:10]
 
     except Exception as e:
         print("❌ استثناء:", e)
         return []
 
 # ==============================
-# 💾 حفظ الأفلام مع نظام أقسام ذكي
+# 🖼 تحميل صورة الفيلم محليًا
+# ==============================
+
+def download_image(poster_path, tmdb_id):
+
+    if not poster_path:
+        return "images/default.jpg"
+
+    if not os.path.exists(IMAGES_PATH):
+        os.makedirs(IMAGES_PATH)
+
+    image_url = f"https://image.tmdb.org/t/p/w500{poster_path}"
+    local_filename = f"{tmdb_id}.jpg"
+    local_path = os.path.join(IMAGES_PATH, local_filename)
+
+    if os.path.exists(local_path):
+        return f"images/{local_filename}"
+
+    try:
+        img_data = requests.get(image_url).content
+        with open(local_path, "wb") as handler:
+            handler.write(img_data)
+
+        print("🖼 تم تحميل الصورة:", local_filename)
+        return f"images/{local_filename}"
+
+    except:
+        print("❌ فشل تحميل الصورة")
+        return "images/default.jpg"
+
+# ==============================
+# 💾 حفظ الأفلام بدون تكرار
 # ==============================
 
 def save_movies(movies):
@@ -52,6 +82,8 @@ def save_movies(movies):
         except:
             data = []
 
+    existing_ids = {movie["tmdb_id"] for movie in data if "tmdb_id" in movie}
+
     for movie in movies:
 
         title = movie.get("title")
@@ -61,11 +93,11 @@ def save_movies(movies):
         if not title or not tmdb_id:
             continue
 
-        poster_url = ""
-        if poster:
-            poster_url = f"https://image.tmdb.org/t/p/w500{poster}"
+        if tmdb_id in existing_ids:
+            continue  # منع التكرار
 
-        # 🔥 نظام أقسام ذكي
+        thumb_path = download_image(poster, tmdb_id)
+
         popularity = movie.get("popularity", 0)
 
         if popularity > 500:
@@ -78,20 +110,20 @@ def save_movies(movies):
         movie_data = {
             "title": title,
             "tmdb_id": tmdb_id,
-            "thumb_path": poster_url,
+            "thumb_path": thumb_path,
             "watch_url": f"watch.html?id={tmdb_id}",
             "category": category,
             "date": datetime.datetime.now().strftime("%d %b %Y")
         }
 
         data.insert(0, movie_data)
-        print("🖼 تمت إضافة:", title)
+        print("✅ تمت إضافة:", title)
 
     with open(MOVIES_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=4, ensure_ascii=False)
 
 # ==============================
-# 🚀 رفع تلقائي إلى GitHub عبر SSH
+# 🚀 رفع إلى GitHub (آمن)
 # ==============================
 
 def push():
@@ -100,22 +132,31 @@ def push():
         os.chdir(BASE_PATH)
 
         subprocess.run(["git", "add", "."], check=True)
-        subprocess.run(["git", "commit", "-m", "auto update"], capture_output=True)
 
-        subprocess.run(["git", "push", "--force", "origin", "main"], check=True)
+        result = subprocess.run(
+            ["git", "commit", "-m", "auto update"],
+            capture_output=True,
+            text=True
+        )
 
-        print("✅ تم الرفع بنجاح عبر SSH")
+        if "nothing to commit" in result.stdout:
+            print("⚡ لا توجد تغييرات")
+            return
+
+        subprocess.run(["git", "push", "origin", "main"], check=True)
+
+        print("🚀 تم الرفع بنجاح")
 
     except Exception as e:
         print("❌ فشل الرفع:", e)
 
 # ==============================
-# 🔥 تشغيل تلقائي مستمر
+# 🔥 تشغيل تلقائي
 # ==============================
 
 if __name__ == "__main__":
 
-    print("🎬 النظام الاحترافي يعمل الآن...")
+    print("🎬 النظام يعمل...")
 
     while True:
 
@@ -124,10 +165,9 @@ if __name__ == "__main__":
         if movies:
             save_movies(movies)
             push()
-
-            print("⏳ انتظار ساعة قبل التحديث القادم")
+            print("⏳ انتظار ساعة...")
             time.sleep(3600)
 
         else:
-            print("⛔ لم يتم جلب بيانات")
+            print("⛔ لا توجد بيانات")
             time.sleep(600)
