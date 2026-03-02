@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Cinema Website</title>
+</head>
+<body style="background:black;color:white;text-align:center;">
+    <h1>🎬 Cinema Website</h1>
+    <div id="movies"></div>
+
+    <script>
+        fetch('movies.json')
+        .then(response => response.json())
+        .then(data => {
+            let container = document.getElementById("movies");
+            data.forEach(movie => {
+                container.innerHTML += `
+                    <div style="margin:20px;">
+                        <h2>${movie.title}</h2>
+                        <img src="${movie.thumb_path}" width="200"><br>
+                        <a href="${movie.url}" target="_blank">Watch</a>
+                    </div>
+                `;
+            });
+        });
+    </script>
+</body>
+</html>
