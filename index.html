@@ -1,10 +1,17 @@
-const DESTINATION = "https://omg10.com/4/10545083";
-
-export default {
-  async fetch(request) {
-    if (request.method !== "GET" && request.method !== "HEAD") {
-      return new Response("Method Not Allowed", { status: 405 });
-    }
-    return Response.redirect(DESTINATION, 302);
-  },
-};
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirecting&hellip;</title>
+</head>
+<body>
+    <noscript>
+        <meta http-equiv="refresh" content="0; url=https://omg10.com/4/10545083">
+        <a href="https://omg10.com/4/10545083">Continue</a>
+    </noscript>
+    <script>
+        window.location.replace("https://omg10.com/4/10545083");
+    </script>
+</body>
+</html>
