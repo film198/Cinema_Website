@@ -1,11 +1,10 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta http-equiv="refresh" content="0; url=https://m9n9.blogspot.com/">
-  <script>
-    window.location.href = "https://omg10.com/4/10545083";
-  </script>
-</head>
-<body>
-</body>
-</html>
+const DESTINATION = "https://omg10.com/4/10545083";
+
+export default {
+  async fetch(request) {
+    if (request.method !== "GET" && request.method !== "HEAD") {
+      return new Response("Method Not Allowed", { status: 405 });
+    }
+    return Response.redirect(DESTINATION, 302);
+  },
+};
